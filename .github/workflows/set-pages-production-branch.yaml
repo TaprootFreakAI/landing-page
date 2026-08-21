@@ -1,0 +1,35 @@
+name: Set Pages production branch
+
+# One-shot: Cloudflare Pages project zkcoins-com currently treats
+# `develop` as production, so merges to develop ship to zkcoins.com.
+# CONTRIBUTING says production_branch must be `main`.
+# Needs repo/org secret CLOUDFLARE_API_TOKEN (Account: Cloudflare Pages Edit).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  patch:
+    name: PATCH production_branch=main
+    runs-on: ubuntu-latest
+    steps:
+      - name: PATCH zkcoins-com
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '1682758c7dcd36eba16a988f5c7fb285'
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set on this repo/org"
+            exit 1
+          fi
+          curl -sfS -X PATCH \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/zkcoins-com" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"production_branch":"main"}'
+          echo
+          echo "production_branch set to main"
